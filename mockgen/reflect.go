@@ -91,6 +91,16 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 		return nil, err
 	}
 
+	line, err := stdout.ReadString('\n')
+
+	for err == nil && line != "ENCODED_PKG\n" {
+		line, err = stdout.ReadString('\n')
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
 	// Process output.
 	var pkg model.Package
 	if err := gob.NewDecoder(&stdout).Decode(&pkg); err != nil {
@@ -147,6 +157,9 @@ func main() {
 		intf.Name = it.sym
 		pkg.Interfaces = append(pkg.Interfaces, intf)
 	}
+
+	fmt.Println("\nENCODED_PKG")
+
 	if err := gob.NewEncoder(os.Stdout).Encode(pkg); err != nil {
 		fmt.Fprintf(os.Stderr, "gob encode: %v\n", err)
 		os.Exit(1)
