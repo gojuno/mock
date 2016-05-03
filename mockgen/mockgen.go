@@ -32,7 +32,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/golang/mock/mockgen/model"
+	"github.com/juno-lab/mock/mockgen/model"
 )
 
 const (

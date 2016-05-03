@@ -28,7 +28,7 @@ import (
 	"runtime"
 	"text/template"
 
-	"github.com/golang/mock/mockgen/model"
+	"github.com/juno-lab/mock/mockgen/model"
 )
 
 var (
