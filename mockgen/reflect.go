@@ -127,7 +127,7 @@ import (
 	"path"
 	"reflect"
 
-	"github.com/golang/mock/mockgen/model"
+	"github.com/juno-lab/mock/mockgen/model"
 
 	pkg_ {{printf "%q" .ImportPath}}
 )
