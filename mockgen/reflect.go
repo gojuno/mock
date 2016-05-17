@@ -25,10 +25,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"text/template"
 
 	"github.com/juno-lab/mock/mockgen/model"
+	"strings"
 )
 
 var (
@@ -42,17 +42,12 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 	progPath := *execOnly
 	if *execOnly == "" {
 		// We use TempDir instead of TempFile so we can control the filename.
-		tmpDir, err := ioutil.TempDir("", "gomock_reflect_")
+		tmpDir, err := ioutil.TempDir(".", "gomock_reflect_")
 		if err != nil {
 			return nil, err
 		}
 		defer func() { os.RemoveAll(tmpDir) }()
 		const progSource = "prog.go"
-		var progBinary = "prog.bin"
-		if runtime.GOOS == "windows" {
-			// Windows won't execute a program unless it has a ".exe" suffix.
-			progBinary += ".exe"
-		}
 
 		// Generate program.
 		var program bytes.Buffer
@@ -71,15 +66,29 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 			return nil, err
 		}
 
+		gbProjectDir, err := getGbInfo("GB_PROJECT_DIR")
+		if err != nil {
+			return nil, err
+		}
+
+		gbBinSuffix, err := getGbInfo("GB_BIN_SUFFIX")
+		if err != nil {
+			return nil, err
+		}
+
+		tmpDirName := filepath.Base(tmpDir)
+		progPath = filepath.Join(gbProjectDir, "bin", tmpDirName+gbBinSuffix)
+		defer os.Remove(progPath)
+
 		// Build the program.
-		cmd := exec.Command("go", "build", "-o", progBinary, progSource)
-		cmd.Dir = tmpDir
+		cmd := exec.Command("gb", "build", tmpDir)
+		cmd.Dir = "."
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
 			return nil, err
 		}
-		progPath = filepath.Join(tmpDir, progBinary)
+
 	}
 
 	// Run it.
@@ -107,6 +116,18 @@ func Reflect(importPath string, symbols []string) (*model.Package, error) {
 		return nil, err
 	}
 	return &pkg, nil
+}
+
+func getGbInfo(param string) (string, error) {
+	cmd := exec.Command("gb", "info", param)
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+
+	return strings.Trim(stdout.String(), "\n"), nil
 }
 
 type reflectData struct {
