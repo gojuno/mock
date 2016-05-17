@@ -26,9 +26,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"text/template"
+	"strings"
 
 	"github.com/juno-lab/mock/mockgen/model"
-	"strings"
 )
 
 var (
